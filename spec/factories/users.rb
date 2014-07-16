@@ -56,12 +56,14 @@ FactoryGirl.define do
     sequence(:login) { |n| "new_user_#{n}" }
     sequence(:name) { |n| "new_user_#{n}" }
     sequence(:email) {|n| "example#{n}@example.com"}
-    provider 'facebook'
-    uid '12345'
     password 'password'
     display_name 'New User'
     credited_name 'Dr New User'
     activated_state :active
     languages ['en', 'es', 'fr-ca']
+
+    after(:build) do |u|
+      create_list(:authorization, 1, user: u, provider: 'facebook', uid: '12345')
+    end
   end
 end
