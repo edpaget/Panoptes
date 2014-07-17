@@ -15,7 +15,7 @@ Devise.setup do |config|
   config.sign_out_via = :delete
 
   # OMNIAUTH
-  
+
   def load_social_config
     config = YAML.load(ERB.new(File.read(Rails.root.join('config/social.yml'))).result)
     config[Rails.env].symbolize_keys
@@ -28,10 +28,12 @@ Devise.setup do |config|
   def omniauth_config_for(config, providers: provider)
     providers.each do |provider|
       conf = social_config[provider]
-      config.omniauth provider, conf.delete('app_id'), conf.delete('app_secret'), **conf
+      config.omniauth provider,
+                      conf.delete('app_id'),
+                      conf.delete('app_secret'),
+                      scope: (conf['scope'] || '')
     end
   end
 
   omniauth_config_for(config, providers: [:facebook, :gplus])
 end
-
