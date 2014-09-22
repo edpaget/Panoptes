@@ -38,22 +38,18 @@ class Classification < ActiveRecord::Base
     self.class.visible_to(actor).exists?(self)
   end
 
-  def subject_id
-    set_member_subject.subject.id
-  end
-
   def enqueue_subject
     return true unless !!user && enqueue?
     UserEnqueuedSubject.enqueue_subject_for_user(user: user,
                                                  workflow: workflow,
-                                                 subject_id: subject_id)
+                                                 subject_id: set_member_subject.id)
   end
 
   def dequeue_subject
     return true unless !!user && complete? && was_enqueued?
     UserEnqueuedSubject.dequeue_subject_for_user(user: user,
                                                  workflow: workflow,
-                                                 subject_id: subject_id)
+                                                 subject_id: set_member_subject.id)
   end
   
   private
