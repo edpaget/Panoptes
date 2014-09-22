@@ -11,10 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140904134658) do
-
-  # These are extensions that must be enabled in order to support this database
-  enable_extension "plpgsql"
+ActiveRecord::Schema.define(version: 20140922155154) do
 
   create_table "authorizations", force: true do |t|
     t.integer  "user_id"
@@ -38,7 +35,7 @@ ActiveRecord::Schema.define(version: 20140904134658) do
     t.datetime "updated_at"
     t.integer  "user_group_id"
     t.inet     "user_ip"
-    t.boolean  "completed",             default: true, null: false
+    t.integer  "state",                 default: 0, null: false
   end
 
   add_index "classifications", ["project_id"], name: "index_classifications_on_project_id", using: :btree
@@ -219,6 +216,17 @@ ActiveRecord::Schema.define(version: 20140904134658) do
 
   add_index "user_collection_preferences", ["collection_id"], name: "index_user_collection_preferences_on_collection_id", using: :btree
   add_index "user_collection_preferences", ["user_id"], name: "index_user_collection_preferences_on_user_id", using: :btree
+
+  create_table "user_enqueued_subjects", force: true do |t|
+    t.integer  "user_id"
+    t.integer  "workflow_id"
+    t.integer  "subject_ids", default: [], null: false, array: true
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "user_enqueued_subjects", ["user_id"], name: "index_user_enqueued_subjects_on_user_id", using: :btree
+  add_index "user_enqueued_subjects", ["workflow_id"], name: "index_user_enqueued_subjects_on_workflow_id", using: :btree
 
   create_table "user_groups", force: true do |t|
     t.string   "name"
