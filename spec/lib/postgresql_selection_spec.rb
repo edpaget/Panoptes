@@ -78,9 +78,15 @@ RSpec.describe PostgresqlSelection do
     before(:all) do
       uploader = create(:user)
       created_workflow = create(:workflow_with_subject_sets)
-      create_list(:subject, 25, project: created_workflow.project, uploader: uploader).each do |subject|
-        create(:set_member_subject, subject: subject, subject_set: created_workflow.subject_sets.first)
+
+      subject = create(:subject, project: created_workflow.project, uploader: uploader)
+      import_cols = %w(subject_set_id subject_id random)
+      sset = created_workflow.subject_sets.first
+      new_sms_values = 100000.times.map do |id|
+        [ sset.id, id + 1, rand ]
       end
+      SetMemberSubject.import import_cols, new_sms_values, validate: false
+      SubjectSet.reset_counters(sset.id, :set_member_subjects)
     end
     after(:all) do
       DatabaseCleaner.clean_with(:deletion)
@@ -88,6 +94,14 @@ RSpec.describe PostgresqlSelection do
 
     describe "random selection" do
       subject { PostgresqlSelection.new(workflow, user) }
+
+      it "should select stuff", :focus do
+        50.times do
+          subject.select
+        end
+        expect(true).to eq(false)
+      end
+
 
       it_behaves_like "select for incomplete_project"
 
@@ -113,9 +127,9 @@ RSpec.describe PostgresqlSelection do
 
       it 'should only select subjects in the specified group' do
         create(:user_seen_subject,
-               user: user,
-               subject_ids: sms.sample(5).map(&:subject_id),
-               workflow: workflow)
+          user: user,
+          subject_ids: sms.sample(5).map(&:subject_id),
+          workflow: workflow)
         set_id = workflow.subject_sets.first.id
         result_ids = subject.select(subject_set_id: set_id)
         sms_subject_ids = SetMemberSubject.where(id: result_ids).pluck(:subject_set_id)

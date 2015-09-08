@@ -8,15 +8,12 @@ module WithOptimisticRetry
     begin
       yield
     rescue ActiveRecord::StaleObjectError => e
-      begin
-        reload
-        retries -= 1
+      reload
+      retries -= 1
+      if retries > 0
+        retry
       else
-        if retries > 0
-          retry
-        else
-          raise e
-        end
+        raise e
       end
     end
   end
