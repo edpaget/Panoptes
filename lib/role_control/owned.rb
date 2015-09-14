@@ -25,17 +25,19 @@ module RoleControl
                          o
                        end
         build_owner_control_list(user_group: owning_group,
-                                 roles: ["owner"])
+          roles: ["owner"])
+        @_owner = nil
         super(owning_group)
       end
 
       def owner
+        return @_owner if @_owner
         group = super
-        if group.try(:identity?)
-          group.users.first
-        else
-          group
-        end
+        @_owner = if group.try(:identity?)
+                    group.users.first
+                  else
+                    group
+                  end
       end
 
       def owner?(test_owner)

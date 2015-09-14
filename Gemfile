@@ -52,6 +52,7 @@ platforms :ruby do
 end
 
 group :development do
+  gem 'ruby-prof'
   gem 'spring'
   gem 'fig_rake', '~> 0.9.3'
   gem 'sqlite3', platform: :ruby

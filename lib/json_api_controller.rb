@@ -49,7 +49,11 @@ module JsonApiController
   end
 
   def serializer
-    @serializer ||= "#{ resource_name.camelize }Serializer".constantize
+    @serializer ||= begin
+                      "V1::#{ resource_name.camelize }Serializer".constantize
+                    rescue NameError
+                      "#{ resource_name.camelize }Serializer".constantize
+                    end
   end
 
   def resource_name

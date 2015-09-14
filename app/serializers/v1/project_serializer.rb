@@ -1,35 +1,26 @@
-class ProjectSerializer
-  include RestPack::Serializer
-  include OwnerLinkSerializer
-  include MediaLinksSerializer
-
+class V1::ProjectSerializer < ActiveModel::Serializer
   attributes :id, :display_name, :classifications_count,
-    :subjects_count, :created_at, :updated_at, :available_languages,
-    :title, :description, :introduction, :private, :retired_subjects_count,
+    :subjects_count, :retired_subjects_count,
+    :created_at, :updated_at,
+    :title, :description, :introduction, :private,
     :configuration, :live, :urls, :migrated, :classifiers_count, :slug, :redirect,
     :beta_requested, :beta_approved, :launch_requested, :launch_approved,
     :href, :workflow_description, :primary_language, :tags
 
-  can_include :workflows, :subject_sets, :owners, :project_contents,
-    :project_roles, :pages
-  can_filter_by :display_name, :slug, :beta_requested, :beta_approved, :launch_requested, :launch_approved
-  media_include :avatar, :background, :attached_images,
-    classifications_export: { include: false}, subjects_export: { include: false },
-    aggregations_export: { include: false }
+  has_many :workflows
+  has_many :subject_sets
+  has_many :project_contents
+  has_many :project_roles
+  has_many :pages
+  has_many :attached_images
 
-  def self.supported_association?(association_macro)
-    return false if association_macro == :has_many
-    super || :belongs_to_many == association_macro
-  end
+  belongs_to :owner
 
-  def self.links
-    links = super
-    links["projects.pages"] = {
-                               href: "/projects/{projects.id}/pages",
-                               type: "project_pages"
-                              }
-    links
-  end
+  has_one :avatar
+  has_one :background
+  has_one :classification_export
+  has_one :subjects_export
+  has_one :aggregations_export
 
   def title
     content[:title]

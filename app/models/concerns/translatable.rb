@@ -17,49 +17,34 @@ module Translatable
     def content_model
       "#{name}Content".constantize
     end
-
-    def load_with_languages(query, languages=nil)
-      where_clause = "#{content_association}.language = #{table_name}.primary_language"
-      query = query.joins(content_association).eager_load(content_association)
-
-      if languages
-        where_clause = "#{where_clause} OR #{content_association}.language ~ ?"
-        query.where(where_clause, lang_regex(languages))
-      else
-        query.where(where_clause)
-      end
-    end
-
-    private
-
-    def lang_regex(langs)
-      langs = langs.map{ |lang| lang[0..1] }.uniq.join("|")
-      "^(#{langs}).*"
-    end
   end
 
   def content_for(languages)
-    content = nil
-    languages = Array.wrap(languages).flat_map do |lang|
-      lang.length == 2 ? lang : [lang, lang[0..1]]
+    #query = content_association.where(language: primary_language)
+
+    #if languages
+      #lang_search = languages.map{ |lang| lang[0..1] + '%' }.uniq
+      #or_matches = content_association.where("language ILIKE any (array[?])", lang_search)
+      #query = query.or(or_matches)
+    #end
+    #lang_array = "array[#{languages.map{ |l| "'" + l + "'" }.join(',')}]"
+    #query.order("array_search('en', #{lang_array})").first
+    languages_to_sort = (languages + [primary_language]).flat_map do |l|
+      if l.length == 2
+        l
+      else
+        [l, l[0..1]]
+      end
     end.uniq
 
-    languages.each do |lang|
-      content = content_association.to_a.find{ |c| c.language == lang }
-      if lang.length == 2 && !content
-        content = content_association.to_a.find do |c|
-          c.language =~ /^#{lang[0..1]}.*/ 
-        end
-      end
+    p languages_to_sort
 
-      break if content
-    end
-    content = primary_content unless content
-    return content
+    content_association.select{ |ca| languages_to_sort.include?(ca.language) }
+      .sort { |ca| languages_to_sort.index_of?(ca.language) }.first
   end
 
   def available_languages
-    content_association.select('language').map(&:language).map(&:downcase)
+    content_association.pluck('language').map(&:downcase)
   end
 
   def content_association

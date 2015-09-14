@@ -1,3 +1,5 @@
+require 'ruby-prof'
+
 class Api::V1::ProjectsController < Api::ApiController
   include FilterByOwner
   include FilterByCurrentUserRoles
@@ -45,16 +47,27 @@ class Api::V1::ProjectsController < Api::ApiController
   end
 
   def index
-    @controlled_resources = controlled_resources.eager_load(:tags)
-    @controlled_resources = case
-                            when params.has_key?(:launch_approved)
-                              controlled_resources.rank(:launched_row_order)
-                            when params.has_key?(:beta_approved)
-                              controlled_resources.rank(:beta_row_order)
-                            else
-                              controlled_resources
-                            end
-    super
+    res = RubyProf.profile do
+      params.delete(:include)
+      @controlled_resources = controlled_resources.eager_load(:tags, :avatar, :background, :owner, :project_contents)
+      @controlled_resources = case
+                              when params.has_key?(:launch_approved)
+                                controlled_resources.rank(:launched_row_order)
+                              when params.has_key?(:beta_approved)
+                                controlled_resources.rank(:beta_row_order)
+                              else
+                                controlled_resources
+                              end
+
+      [:display_name, :slug, :beta_requested, :beta_approved, :launch_requested, :launch_approved].each do |filter|
+        @controlled_resources = controlled_resources.where(filter => params[filter]) if params.has_key?(filter)
+      end
+      super
+    end
+    File.open(Rails.root.join("log/profile.log"), 'w') do |f|
+      printer = RubyProf::FlatPrinter.new(res)
+      printer.print(f, {})
+    end
   end
 
   def create_classifications_export
@@ -119,8 +132,8 @@ class Api::V1::ProjectsController < Api::ApiController
 
   def create_response(projects)
     serializer.resource({ include: 'owners' },
-                        resource_scope(projects),
-                        fields: CONTENT_FIELDS)
+      resource_scope(projects),
+      fields: CONTENT_FIELDS)
   end
 
   def content_from_params(ps)

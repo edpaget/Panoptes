@@ -57,6 +57,7 @@ module MediaLinksSerializer
 
   def add_links(model, data)
     data = super
+    p data[:links]
     self.class.media_links.each do |link|
       id = data[:links].delete(link)
       data[:links][link] = {
